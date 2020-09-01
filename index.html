@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuchenny pamietniczek</title>
+    <link href="./style.less" rel="stylesheet/less" type="text/css"/>
+    <script src="./utils/less.js"></script>
+    <script src="./main.js"></script>
+</head>
+<body>
+    <main>
+        <!-- SIDEBAR -->
+        <div class="sidebar collapsed">
+            <div class="user-panel">
+                <img src="./assets/images/pexels-chloe-kala-1043471.jpg" alt="user image"/>
+                <p class="name">Janusz</p>
+                <p class="surname">Kowalski</p>
+                <p class="email">janusz.kowalski@email.com</p>
+            </div>
+            <ul class="nav" id="nav">
+                <li data-panel="add-food" class="active"><span>Dodaj Potrawe</span><span>DP</span></li>
+                <li data-panel="edit-profile"><span>Edytuj Profil</span><span>EP</span></li>
+                <li data-panel="edit-colors"><span>Zmien Kolor</span><span>ZK</span></li>
+            </ul>
+            <span id="collapse-btn"><</span>
+        </div>
+        <!-- CONTAINER -->
+        <div class="container">
+            <h1>Kuchenny pamietniczek</h1>
+
+        </div>
+    </main>
+</body>
+</html>

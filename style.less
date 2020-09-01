@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;700&display=swap');
+
+@main-color: #41bcff;
+@background: white;
+@background-secondary: #d9d9d9;
+@font-color: #333333;
+@accept-color: #00e973;
+@cancel-color: #f94141;
+@transparent-background: rgba(0,0,0,0.75);
+
+html {
+    font-size: 16px;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 300;
+}
+
+h1 {
+    color: @main-color;
+}
+
+body {
+    padding: 0;
+    margin: 0;
+    .sidebar {
+        display: block;
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        height: 100vh;
+        width: 280px;
+        background-color: @main-color;
+        color: @background;
+        transition: all 0.5s ease;
+        * {
+            transition: all 0.5s ease;
+        }
+
+        .user-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 25px;
+            p {
+                margin-bottom: 0;
+                margin-top: 5px;
+                &.name {
+                    font-size: 30px;
+                    font-weight: 400;
+                }
+                &.surname {
+                    font-size: 20px;
+                }
+                &.email {
+                    font-size: 15px;
+                }
+            }
+            img {
+                width: 150px;
+                height: 150px;
+                display: block;
+                object-fit: cover;
+                border-radius: 50%;
+                transition: all 0.5s ease;
+                border: 10px solid darken(@main-color, 30%);
+            }
+        }
+        .nav {
+            list-style: none;
+            padding: 0;
+            margin: 50px 0 0 0;
+            li {
+                padding: 15px 25px;
+                font-size: 20px;
+                cursor: pointer;
+                transition: background-color 0.5s ease;
+                &:hover {
+                    background-color: darken(@main-color, 30%);
+                }
+                span:last-child {
+                    display: none;
+                }
+                &.active {
+                    background-color: lighten(@main-color, 10%);
+                }
+            }
+        }
+        #collapse-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            position: absolute;
+            bottom: 25px;
+            right: 25px;
+            font-size: 30px;
+            font-weight: 700;
+            cursor: pointer;
+            background-color: transparent;
+            border-radius: 0;
+            padding: 0 3px 4px 2px;
+            transition: all 0.5s ease;
+            line-height: 1;
+
+            &:hover {
+                border-radius: 50%;
+                background-color: lighten(@main-color, 10%);
+            }
+        }
+        &.collapsed {
+            width: 90px;
+            .user-panel {
+                img {
+                    width: 50px;
+                    height: 50px;
+                    border-width: 5px;
+                }
+                .name,
+                .surname {
+                    font-size: 1rem;
+                }
+                .email {
+                    display: none;
+                }
+            }
+            .nav li span {
+                &:first-child {
+                    display: none;
+                }
+                &:last-child {
+                    display: block;
+                    width: 100%;
+                    text-align: center;
+                }
+            }
+            #collapse-btn {
+                left: 50%;
+                right: 0;
+                transform: translateX(-50%) rotate(180deg);
+            }
+            & + .container {
+                width: calc(100vw - 165px);
+            }
+        }
+    }
+    .container {
+        display: block;
+        margin-left: auto;
+        width: calc(100vw - 355px);
+        padding: 25px;
+        height: calc(100vh - 50px);
+        transition: width 0.5s ease;
+        h1 {
+            margin: 0;
+        }
+    }
+}
