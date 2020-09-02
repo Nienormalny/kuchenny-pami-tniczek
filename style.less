@@ -1,26 +1,44 @@
-@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;500;700&display=swap');
 
 @main-color: #41bcff;
 @background: white;
 @background-secondary: #d9d9d9;
 @font-color: #333333;
-@accept-color: #00e973;
+@accept-color: #12c56c;
 @cancel-color: #f94141;
 @transparent-background: rgba(0,0,0,0.75);
 
-html {
-    font-size: 16px;
-    font-family: 'Raleway', sans-serif;
-    font-weight: 300;
+.btn-standard(@background-color, @border-color, @font-color) {
+    background-color: @background-color;
+    border: 0;
+    color: @font-color;
+    outline: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 10px 25px;
+    text-align: center;
+    font-weight: 500;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    transition: background-color 0.5s ease;
+    &:hover {
+        background-color: darken(@background-color, 10%);
+    }
 }
-
-h1 {
-    color: @main-color;
+html {
+    font-weight: 300;
+    font-size: 16px;
+    color: @font-color;
+}
+* {
+    font-family: 'Raleway', sans-serif;
 }
 
 body {
     padding: 0;
     margin: 0;
+    background-color: @background;
+
     .sidebar {
         display: block;
         position: fixed;
@@ -45,7 +63,7 @@ body {
                 margin-top: 5px;
                 &.name {
                     font-size: 30px;
-                    font-weight: 400;
+                    font-weight: 500;
                 }
                 &.surname {
                     font-size: 20px;
@@ -143,6 +161,65 @@ body {
             }
         }
     }
+    #welcome-page {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        h1 {
+            width: 100%;
+            text-align: center;
+            text-transform: uppercase;
+            color: @font-color;
+            padding: 25px;
+            background-color: @background;
+            margin: 0 auto;
+            display: block;
+        }
+        & > div {
+            margin: 100px 50px 0 50px;
+            width: calc(50vw - 150px);
+            position: absolute;
+            top: 0;
+            &.left-box {
+                left: 0;
+            }
+            &.right-box {
+                right: 0;
+            }
+            h2, h3 {
+                text-align: center;
+                color: white;
+            }
+            h2 {
+                margin-bottom: 0;
+            }
+            h3 {
+                margin-top: 0;
+            }
+        }
+        &:before {
+            content: '';
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 50vw;
+            height: 100vh;
+            background-color: @main-color;
+            z-index: -1;
+        }
+        &:after {
+            content: '';
+            display: block;
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 50vw;
+            height: 100vh;
+            background-color: darken(@main-color, 10%);
+            z-index: -1;
+        }
+    }
     .container {
         display: block;
         margin-left: auto;
@@ -153,5 +230,52 @@ body {
         h1 {
             margin: 0;
         }
+        & > div {
+            display: flex;
+            justify-content: center;
+            margin: 25px auto;
+        }
+    }
+    form {
+        display: flex;
+        flex-direction: column;
+        max-width: 400px;
+        padding: 25px;
+        box-shadow: 0 10px 30px -25px black;
+        background-color: @background;
+        margin: auto;
+        label {
+            margin: 5px 0;
+            display: flex;
+            flex-direction: column;
+            b {
+                letter-spacing: 1px;
+            }
+            input {
+                margin-top: 5px;
+                margin-bottom: 15px;
+            }
+        }
+    }
+    // PRZYCISKI I INPUTY
+    button {
+        .btn-standard(transparent, darken(@main-color, 30%), white);
+        &[type="submit"] {
+            .btn-standard(@accept-color, darken(@accept-color, 30%), white);
+        }
+    }
+    input {
+        border: 2px solid @main-color;
+        padding: 10px 15px;
+        border-radius: 3px;
+        color: @main-color;
+        background-color: white;
+        outline: none;
+    }
+    #logout {
+        position: fixed;
+        top: 25px;
+        right: 25px;
+        .btn-standard(@cancel-color, darken(@cancel-color, 30%), white);
     }
 }
