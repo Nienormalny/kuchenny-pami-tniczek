@@ -9,27 +9,31 @@
     <script src="./main.js"></script>
 </head>
 <body>
-    <main>
-        <!-- SIDEBAR -->
-        <div class="sidebar collapsed">
-            <div class="user-panel">
-                <img src="./assets/images/pexels-chloe-kala-1043471.jpg" alt="user image"/>
-                <p class="name">Janusz</p>
-                <p class="surname">Kowalski</p>
-                <p class="email">janusz.kowalski@email.com</p>
-            </div>
-            <ul class="nav" id="nav">
-                <li data-panel="add-food" class="active"><span>Dodaj Potrawe</span><span>DP</span></li>
-                <li data-panel="edit-profile"><span>Edytuj Profil</span><span>EP</span></li>
-                <li data-panel="edit-colors"><span>Zmien Kolor</span><span>ZK</span></li>
-            </ul>
-            <span id="collapse-btn"><</span>
-        </div>
-        <!-- CONTAINER -->
-        <div class="container">
-            <h1>Kuchenny pamietniczek</h1>
+    <main id="main"></main>
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/7.19.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.19.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.19.1/firebase-auth.js"></script>
 
-        </div>
-    </main>
+    <!-- TODO: Add SDKs for Firebase products that you want to use
+        https://firebase.google.com/docs/web/setup#available-libraries -->
+    <script src="https://www.gstatic.com/firebasejs/7.19.1/firebase-analytics.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        var firebaseConfig = {
+            apiKey: "AIzaSyBw4IjDYUyHYom5vKDUVBMn1gmIARWz46Q",
+            authDomain: "kuchenny-pamietniczek.firebaseapp.com",
+            databaseURL: "https://kuchenny-pamietniczek.firebaseio.com",
+            projectId: "kuchenny-pamietniczek",
+            storageBucket: "kuchenny-pamietniczek.appspot.com",
+            messagingSenderId: "1035621188833",
+            appId: "1:1035621188833:web:d9d4cc2299569fed6c63a0",
+            measurementId: "G-JY402Y7MQC"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        firebase.analytics();
+    </script>
 </body>
 </html>
