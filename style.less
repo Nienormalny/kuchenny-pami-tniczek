@@ -38,10 +38,11 @@ body {
     padding: 0;
     margin: 0;
     background-color: @background;
+    overflow: hidden;
 
     .sidebar {
         display: block;
-        position: fixed;
+        position: relative;
         top: 0;
         bottom: 0;
         height: 100vh;
@@ -92,13 +93,16 @@ body {
                 cursor: pointer;
                 transition: background-color 0.5s ease;
                 &:hover {
-                    background-color: darken(@main-color, 30%);
+                    background-color: darken(@main-color, 10%);
                 }
                 span:last-child {
                     display: none;
                 }
                 &.active {
                     background-color: lighten(@main-color, 10%);
+                }
+                span {
+                    pointer-events: none;
                 }
             }
         }
@@ -220,20 +224,92 @@ body {
             z-index: -1;
         }
     }
-    .container {
-        display: block;
-        margin-left: auto;
-        width: calc(100vw - 355px);
-        padding: 25px;
-        height: calc(100vh - 50px);
-        transition: width 0.5s ease;
-        h1 {
-            margin: 0;
-        }
-        & > div {
+    #color-settings-page {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+        margin: 0 auto;
+        .colors-box {
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
-            margin: 25px auto;
+            width: 240px;
+            span {
+                display: block;
+                height: 100px;
+                width: 100px;
+                background-color: #d1d1d1;
+                margin: 10px;
+                border-radius: 3px;
+                &.background-secondary {
+                    outline: 5px solid @main-color;
+                    outline-offset: -5px;
+                    background-color: transparent;
+                }
+                &.background-main {
+                    background-color: @background;
+                }
+                &.main-color {
+                    background-color: @main-color;
+                }
+                &.font-color {
+                    background-color: @font-color;
+                }
+            }
+        }
+        #colors-settings {
+            margin: auto 0 0 0;
+            label {
+                flex-direction: unset;
+                align-items: center;
+                justify-content: flex-end;
+                margin: 5px 0;
+                input {
+                    margin: 0 0 0 10px;
+                    &.background-secondary {
+                        border: 2px solid @background-secondary;
+                    }
+                    &.background-main {
+                        border: 2px solid @background;
+                    }
+                    &.main-color {
+                        border: 2px solid @main-color;
+                    }
+                    &.font-color {
+                        border: 2px solid @font-color;
+                    }
+                }
+            }
+            button {
+                width: fit-content;
+                margin: auto;
+                margin-top: 15px;
+            }
+        }
+    }
+    #panel {
+        display: flex;
+
+        #container {
+            display: flex;
+            width: calc(100% - 50px);
+            height: calc(100vh - 50px);
+            padding: 25px;
+            position: relative;
+            &:before {
+                content: '';
+                display: block;
+                position: absolute;
+                z-index: -1;
+                height: 100vw;
+                width: calc(100% + 300px);
+                border-radius: 50%;
+                top: -50vw;
+                left: 50%;
+                transform: translate(-50%, -10%);
+                background-color: @background-secondary;
+            }
         }
     }
     form {
