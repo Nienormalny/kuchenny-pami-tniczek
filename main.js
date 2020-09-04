@@ -1,7 +1,7 @@
 window.onload = () => {
-    this.user = {};
-    let userData;
-    console.log('__HELLO___FIRIEND__');
+    const localStorage = window.localStorage;
+    this.user = JSON.parse(localStorage.getItem('userData')) || {};
+    console.log('__HELLO___FIRIEND__', this.user);
     // Funkcje firebasowe jako stałe
     const firestore = firebase.firestore();
     const auth = firebase.auth();
@@ -20,6 +20,8 @@ window.onload = () => {
 
     // Stałe / Zmienne
     let errorMsg = '';
+    let ingredientsList = [];
+    let numberOfIngredients = 0;
 
     // TEMPLATKI
     // === STRONA POWITALNA === //
@@ -56,7 +58,7 @@ window.onload = () => {
                 <b>Hasło</b>
                 <input name="password" type="password" placeholder="Twoje hasło"/>
             </label>
-            <button type="submit">Zarejestrój się</button>
+            <button type="submit">Zarejestruj się</button>
         </form>
     </div>
     `;
@@ -72,13 +74,13 @@ window.onload = () => {
                 <b>Hasło</b>
                 <input name="password" type="password" placeholder="Twoje hasło"/>
             </label>
-            <button type="submit">Zalogój się</button>
+            <button type="submit">Zaloguj się</button>
         </form>
     </div>`;
     // === SIDEBAR === //
     const sidebarTemplate = `<div class="sidebar collapsed">
         <ul class="nav" id="nav">
-            <li id="add-food" class="active"><span>Dodaj Potrawe</span><span>DP</span></li>
+            <li id="food-recipes"><span>Dodaj Potrawe</span><span>DP</span></li>
             <li id="edit-profile"><span>Edytuj Profil</span><span>EP</span></li>
             <li id="edit-colors"><span>Zmien Kolor</span><span>ZK</span></li>
         </ul>
@@ -93,9 +95,56 @@ window.onload = () => {
     </div>`;
     // === PRAWA CZĘŚĆ STRONY PO ZALOGOWANIU === //
     const panelTemplate = `<section id="panel">
-        <div id="container"></div>
+        <div id="container">
+            <div class="logged-info">
+                <h1>Witaj ${this.user.name}!</h1>
+                <h2>Co dzisiaj jemy?</h2>
+            </div>
+        </div>
         <button id="logout">Wyloguj się</button>
     </section>`;
+    // === STRONA Z PRZEPISAMI === //
+    const foodRecipesTemplate = (data) => `
+        <div id="food-recipes-page">
+            ${checkIfRecipesExists(data)}
+            <button id="add-food"></button>
+        </div>
+    `;
+    const getIngredients = (ingredients) => {
+        return ingredients.map(ing => {
+            return `<li>${ing}</li>`
+        }).join('');
+    }
+
+    // === MODAL DO DODAWANIA PRZEPISU === //
+    const addRecipeModalTemplate = `
+        <div id="add-recipe-modal">
+            <h2>Dodaj przepis</h2>
+            <form id="add-recipe">
+                <label>
+                    <b>Nazwa potrawy</b>
+                    <input type="text" placeholder="Nazwa potrawy" name="recipeName"/>
+                </label>
+                <label>
+                    <b>Link do zdjęcia</b>
+                    <input name="imageUrl" type="text" placeholder="Link do zdjęcia"/>
+                </label>
+                <label id="ingredients">
+                    <b>Składniki</b>
+                    <input id="ingredient" type="text" placeholder="np. 200g Mąki..." name="ingredient"/>
+                    <button id="add-ingredient"></button>
+                    <ul id="ingredients-list"></ul>
+                </label>
+                <label>
+                    <b>Opis</b>
+                    <textarea name="description" type="text" placeholder="Na początku dodaj 200g mąki do miski..." ></textarea>
+                </label>
+                <button type="submit">Dodaj</button>
+            </form>
+            <button id="close-recipe-modal"></button>
+        </div>
+    `;
+    const ingredientLiTemplate = (ingredient, id) => `<li id="${id}">${ingredient} <button data-id="${id}" class="remove-ingredient"></button></li>`;
     // === STRONA Z USTAWIENIAMI KOLORÓW === //
     const colorSettingsTemplate = (data) => `
         <div id="color-settings-page">
@@ -128,6 +177,60 @@ window.onload = () => {
         </div>
     `;
 
+    const checkIfRecipesExists = (data) => {
+        if (data.recipes) {
+            return Array.from(data.recipes).map(recipe => {
+                return `
+                    <div class="recipe-box">
+                        <h3>${recipe.name}</h3>
+                        <div class="recipe-details">
+                            <ul>
+                                ${getIngredients(recipe.ingredients)}
+                            </ul>
+                            <p class="recipe-description">
+                                ${recipe.description}
+                            </p>
+                        </div>
+                        <img src="${recipe.imageUrl}"/>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            return `<h1>Nie ma food</h1>`;
+        }
+    }
+
+    const loggedIn = () => {
+        // nadajemy kolory zdefiniowanym zmiennym w style.less
+        less.modifyVars({
+            /* @main-color */ 'main-color': this.user.theme['main-color'],
+            /* @background */ 'background': this.user.theme['background-main'],
+            /* @font-color */ 'font-color': this.user.theme['font-color'],
+            /* @background-secondary */ 'background-secondary': this.user.theme['background-secondary']
+        });
+        // Budujemy template z eventListenerem dla przycisku Logout
+        buildTemplate(panelTemplate, main, false, true, 'logout');
+        // Budujemy template sidebar
+        buildTemplate(sidebarTemplate, document.getElementById('panel'), true);
+        createListener('edit-colors');
+        createListener('food-recipes');
+        if (document.getElementById('welcome-page')) {
+            document.getElementById('welcome-page').remove();
+        }
+        // Budujemy podgląd usera w sidebarze z eventListenerem dla Przycisku powiększającego sidebar
+        buildTemplate(userPanelTemplate(this.user), document.querySelector('.sidebar'), true, true, 'collapse-sidebar');
+        getRecipes().then(() => {
+            localStorage.setItem('userData', JSON.stringify(this.user));
+            //TODO: Dodaj info o dodaniu nowego przepisu
+        });
+    }
+
+    const getRecipes = async () => {
+        return firestore.collection('users').doc(this.user.id).collection('recipes').get().then(resp => {
+            this.user.recipes = [];
+            resp.forEach(doc => this.user = {...this.user, 'recipes': [...this.user.recipes, {...doc.data()}]});
+        });
+    }
     // Funkcja do tworzenia listenerów
     const createListener = (id) => {
         switch (id) {
@@ -147,24 +250,9 @@ window.onload = () => {
                             */
                             firestore.collection('users').doc(resp.user.uid).get().then(userData => {
                                 if (userData.exists) {
-                                    this.user = {...userData.data(), id: resp.user.uid};
-                                    userData = {...userData.data(), id: resp.user.uid};
-                                    // nadajemy kolory zdefiniowanym zmiennym w style.less
-                                    less.modifyVars({
-                                        /* @main-color */ 'main-color': this.user.theme['main-color'],
-                                        /* @background */ 'background': this.user.theme['background-main'],
-                                        /* @font-color */ 'font-color': this.user.theme['font-color'],
-                                        /* @background-secondary */ 'background-secondary': this.user.theme['background-secondary']
-                                    });
-                                    // Budujemy template z eventListenerem dla przycisku Logout
-                                    buildTemplate(panelTemplate, main, false, true, 'logout');
-                                    // Budujemy template sidebar
-                                    buildTemplate(sidebarTemplate, document.getElementById('panel'), true);
-                                    createListener('edit-colors');
-                                    // Usuwamy welcome page
-                                    document.getElementById('welcome-page').remove();
-                                    // Budujemy podgląd usera w sidebarze z eventListenerem dla Przycisku powiększającego sidebar
-                                    buildTemplate(userPanelTemplate(this.user), document.querySelector('.sidebar'), true, true, 'collapse-sidebar');
+                                    this.user = {...userData.data(), id: resp.user.uid, loggedInAt: new Date()};
+                                    localStorage.setItem('userData', JSON.stringify(this.user));
+                                    loggedIn();
                                 } else {
                                     errorMsg = 'Ten użytkownik nie istnieje, prosze spróbować ponownie';
                                 }
@@ -207,6 +295,7 @@ window.onload = () => {
                     document.getElementById('panel').remove();
                     // Resetujemy dane globalnej "user"
                     this.user = {};
+                    localStorage.removeItem('userData');
                     buildTemplate(wellcomeTemplate, main);
                     buildTemplate(registrationPageTemplate, document.getElementById('registration-container'), false, true, 'registration');
                     buildTemplate(loginPageTemplate, document.getElementById('login-container'), false, true, 'login');
@@ -214,6 +303,73 @@ window.onload = () => {
             // Sidebar toggle listener
             case 'collapse-sidebar':
                 return document.getElementById('collapse-btn').addEventListener('click', e => document.querySelector('.sidebar').classList.toggle('collapsed'), true);
+            case 'food-recipes':
+                return document.getElementById(id).addEventListener('click', e => {
+                    document.getElementById('container').innerHTML = '';
+                    document.getElementById('nav').querySelectorAll('li').forEach((el) => {
+                        if (el.classList.contains('active') && !document.isEqualNode(el, e.target)) {
+                            el.classList.remove('active');
+                        }
+                        e.target.classList.add('active');
+                    })
+                    buildTemplate(foodRecipesTemplate(this.user), document.getElementById('container'), true, true, 'add-food');
+                });
+            case 'add-food':
+                return document.getElementById(id).addEventListener('click', e => {
+                    e.preventDefault();
+                    buildTemplate(addRecipeModalTemplate, document.getElementById('container'), true, true, 'add-recipe');
+                    createListener('close-recipe-modal');
+                });
+            case 'close-recipe-modal':
+                return document.getElementById(id).addEventListener('click', e => {
+                    e.preventDefault();
+                    document.getElementById('add-recipe-modal').remove();
+                })
+            case 'add-recipe':
+                createListener('add-ingredient');
+                return document.getElementById(id).addEventListener('submit', e => {
+                    e.preventDefault();
+                    const {recipeName, imageUrl, description} = e.target.elements;
+                    const recipeId = create_UUID();
+                    if (recipeName.value && imageUrl.value && description.value && ingredientsList.length) {
+                        firestore.collection('users').doc(this.user.id).collection('recipes').doc(recipeId).set({
+                            'id': recipeId,
+                            'createdAt': new Date(),
+                            'name': recipeName.value,
+                            'imageUrl': imageUrl.value,
+                            'description': description.value,
+                            'ingredients': ingredientsList
+                        }).then(reps => {
+                            firestore.collection('users').doc(this.user.id).get().then(userData => {
+                                this.user = {...userData.data()};
+                                getRecipes().then(() => {
+                                    localStorage.setItem('userData', JSON.stringify(this.user));
+                                    document.getElementById('add-recipe').reset();
+                                    document.getElementById('add-recipe-modal').remove();
+                                    ingredientsList = [];
+                                    //TODO: Dodaj info o dodaniu nowego przepisu
+                                });
+                            });
+                        });
+                    }
+                });
+            case 'add-ingredient':
+                createListener('remove-ingredient');
+                return document.getElementById(id).addEventListener('click', e => {
+                    e.preventDefault();
+                    numberOfIngredients++;
+                    const inputValue = document.getElementById('ingredient').value;
+                    ingredientsList.push(inputValue.replace(' ', '-'));
+                    buildTemplate(ingredientLiTemplate(inputValue, `ingredient-${numberOfIngredients}`), document.getElementById('ingredients-list'));
+                    document.getElementById('ingredient').value = '';
+                });
+            case 'remove-ingredient':
+                return document.getElementById('ingredients-list').addEventListener('click', e => {
+                    e.preventDefault();
+                    const index = ingredientsList.indexOf();
+                    ingredientsList = ingredientsList.filter(item => item !== e.target.parentElement.innerText.replace(' ', '-'));
+                    e.target.parentElement.remove();
+                });
             case 'edit-colors':
                 return document.getElementById(id).addEventListener('click', e => {
                     document.getElementById('container').innerHTML = '';
@@ -241,6 +397,7 @@ window.onload = () => {
                         firestore.collection('users').doc(this.user.id).get().then(userData => {
                             if (userData.exists) {
                                 this.user = {...userData.data()};
+                                localStorage.setItem('userData', JSON.stringify(this.user));
                                 // nadajemy kolory zdefiniowanym zmiennym w style.less
                                 less.modifyVars({
                                     /* @main-color */ 'main-color': this.user.theme['main-color'],
@@ -281,7 +438,11 @@ window.onload = () => {
         return uuid;
     }
 
-    buildTemplate(wellcomeTemplate, main);
-    buildTemplate(registrationPageTemplate, document.getElementById('registration-container'), false, true, 'registration');
-    buildTemplate(loginPageTemplate, document.getElementById('login-container'), false, true, 'login');
+    if (Object.keys(this.user).length > 0) {
+        loggedIn();
+    } else {
+        buildTemplate(wellcomeTemplate, main);
+        buildTemplate(registrationPageTemplate, document.getElementById('registration-container'), false, true, 'registration');
+        buildTemplate(loginPageTemplate, document.getElementById('login-container'), false, true, 'login');
+    }
 }
