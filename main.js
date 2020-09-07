@@ -80,7 +80,7 @@ window.onload = () => {
     // === SIDEBAR === //
     const sidebarTemplate = `<div class="sidebar collapsed">
         <ul class="nav" id="nav">
-            <li id="food-recipes"><span>Dodaj Potrawe</span><span>DP</span></li>
+            <li id="food-recipes"><span>Moje Potrawy</span><span>DP</span></li>
             <li id="edit-profile"><span>Edytuj Profil</span><span>EP</span></li>
             <li id="edit-colors"><span>Zmien Kolor</span><span>ZK</span></li>
         </ul>
@@ -88,7 +88,7 @@ window.onload = () => {
     </div>`;
     // === SIDEBAR -> USER PANEL === //
     const userPanelTemplate = (data) => `<div class="user-panel">
-        <img src="./assets/images/pexels-chloe-kala-1043471.jpg" alt="user image"/>
+        <img class="user-image" src="${data.image || './assets/standard-user-image.png'}" alt="user image"/>
         <p class="name">${data.name}</p>
         <p class="surname">${data.surname}</p>
         <p class="email">${data.email}</p>
@@ -176,13 +176,44 @@ window.onload = () => {
             </form>
         </div>
     `;
+    // === STRONA Z USTAWIENIAMI KOLORÓW === //
+    const profileSettingsTemplate = (data) => `
+        <div id="profile-settings-page">
+            <div class="profile-box">
+                <img class="user-image" src="${data.image || './assets/standard-user-image.png'}" alt="Zdjęcie profilu"/>
+            </div>
+            <h1>Ustawienia profilu</h1>
+            <form id="profile-settings">
+                <label>
+                    <b>Imie</b>
+                    <input type="text" placeholder="${data.name}" name="name"/>
+                </label>
+                <label>
+                    <b>Nazwisko</b>
+                    <input name="surname" type="text" placeholder="${data.surname}"/>
+                </label>
+                <label>
+                    <b>Link do zdjęcia</b>
+                    <input name="image" type="text" placeholder="${data.image || 'Link do zdjęcia'}"/>
+                </label>
+                <label>
+                    <b>Kolor ramki zdjęcia</b>
+                    <input class="border-image-color" name="borderColor" type="text" placeholder="${data['border-color']}"/>
+                </label>
+                <button type="submit">Zapisz ustawienia</button>
+            </form>
+        </div>
+    `;
 
     const checkIfRecipesExists = (data) => {
         if (data.recipes) {
             return Array.from(data.recipes).map(recipe => {
                 return `
                     <div class="recipe-box">
-                        <h3>${recipe.name}</h3>
+                        <div class="box-header">
+                            <h3>${recipe.name}</h3>
+                            <button class="delete">Usuń</button>
+                        </div>
                         <div class="recipe-details">
                             <ul>
                                 ${getIngredients(recipe.ingredients)}
@@ -206,6 +237,7 @@ window.onload = () => {
             /* @main-color */ 'main-color': this.user.theme['main-color'],
             /* @background */ 'background': this.user.theme['background-main'],
             /* @font-color */ 'font-color': this.user.theme['font-color'],
+            /* @border-color */ 'border-color': this.user['border-color'],
             /* @background-secondary */ 'background-secondary': this.user.theme['background-secondary']
         });
         // Budujemy template z eventListenerem dla przycisku Logout
@@ -214,6 +246,7 @@ window.onload = () => {
         buildTemplate(sidebarTemplate, document.getElementById('panel'), true);
         createListener('edit-colors');
         createListener('food-recipes');
+        createListener('edit-profile');
         if (document.getElementById('welcome-page')) {
             document.getElementById('welcome-page').remove();
         }
@@ -381,6 +414,53 @@ window.onload = () => {
                     })
                     buildTemplate(colorSettingsTemplate(this.user), document.getElementById('container'), true, true, 'colors-settings');
                 });
+            case 'edit-profile':
+                return document.getElementById(id).addEventListener('click', e => {
+                    document.getElementById('container').innerHTML = '';
+                    document.getElementById('nav').querySelectorAll('li').forEach(el => {
+                        if (el.classList.contains('active') && !document.isEqualNode(el, e.target)) {
+                            el.classList.remove('active');
+                        }
+                        e.target.classList.add('active');
+                    })
+                    buildTemplate(profileSettingsTemplate(this.user), document.getElementById('container'), true, true, 'profile-settings-page');
+                });
+            case 'profile-settings-page':
+                return document.getElementById(id).addEventListener('submit', e => {
+                    e.preventDefault();
+                    const {name, surname, borderColor, image} = e.target.elements;
+                    firestore.collection('users').doc(this.user.id).update({
+                        'border-color': borderColor.value || borderColor.placeholder,
+                        'name': name.value || name.placeholder,
+                        'surname': surname.value || surname.placeholder,
+                        'image': image.value || image.placeholder
+                    }).then(resp => {
+                        firestore.collection('users').doc(this.user.id).get().then(userData => {
+                            if (userData.exists) {
+                                this.user = {...userData.data()};
+                                localStorage.setItem('userData', JSON.stringify(this.user));
+                                less.modifyVars({
+                                    /* @main-color */ 'main-color': this.user.theme['main-color'],
+                                    /* @background */ 'background': this.user.theme['background-main'],
+                                    /* @font-color */ 'font-color': this.user.theme['font-color'],
+                                    /* @border-color */ 'border-color': this.user['border-color'],
+                                    /* @background-secondary */ 'background-secondary': this.user.theme['background-secondary']
+                                });
+                                document.querySelector('.user-panel').remove();
+                                console.dir(document.querySelector('.profile-box'));
+                                document.querySelector('.profile-box').children[0].setAttribute('src', this.user.image);
+
+                                buildTemplate(userPanelTemplate(this.user), document.querySelector('.sidebar'), true);
+                                getRecipes().then(() => {
+                                    localStorage.setItem('userData', JSON.stringify(this.user));
+                                    //TODO: Dodaj info o dodaniu nowego przepisu
+                                });
+                            } else {
+                                errorMsg = 'Ten użytkownik nie istnieje, prosze spróbować ponownie';
+                            }
+                        });
+                    });
+                })
             case 'colors-settings':
                 return document.getElementById('colors-settings').addEventListener('submit', e => {
                     e.preventDefault();
@@ -397,12 +477,16 @@ window.onload = () => {
                         firestore.collection('users').doc(this.user.id).get().then(userData => {
                             if (userData.exists) {
                                 this.user = {...userData.data()};
-                                localStorage.setItem('userData', JSON.stringify(this.user));
                                 // nadajemy kolory zdefiniowanym zmiennym w style.less
+                                getRecipes().then(() => {
+                                    localStorage.setItem('userData', JSON.stringify(this.user));
+                                    //TODO: Dodaj info o dodaniu nowego przepisu
+                                });
                                 less.modifyVars({
                                     /* @main-color */ 'main-color': this.user.theme['main-color'],
                                     /* @background */ 'background': this.user.theme['background-main'],
                                     /* @font-color */ 'font-color': this.user.theme['font-color'],
+                                    /* @border-color */ 'border-color': this.user['border-color'],
                                     /* @background-secondary */ 'background-secondary': this.user.theme['background-secondary']
                                 });
                             } else {
