@@ -518,23 +518,27 @@ window.onload = () => {
                     }).catch(err => alert(err));
                 });
             case 'get-public-recipes':
+                // Pobieramy wszystkie publiczne przepisy
                 return firestore.collectionGroup('recipes').where('public', '==', true).get().then(recipes => {
                     recipes.forEach(doc => {
+                        // Dodajemy je do globalnej tablicy
                         this.publicRecipes.push(doc.data());
                     });
                 }).then(() => {
                     firestore.collection('dailyRecipes').get().then(respond => {
+                        // Pobieramy losową receptę z wszystkich publicznych recept
                         const randomNumber = Math.floor(Math.random() * this.publicRecipes.length);
-                        const date = new Date();
+                        const date = new Date().toLocaleDateString();
+                        // Sprawdza czy dailyRecipes kolekcja istnieje
                         if (respond.size) {
-                            console.log(respond.docs[respond.docs.length - 1].data());
                             respond.forEach(doc => {
-                                console.log(doc.data(), doc.data().createdAt.toDate().toLocaleDateString(), new Date().toLocaleDateString());
-                                if (doc.exists) {
-                                    if (doc.data().createdAt.toDate().toLocaleDateString() === new Date().toLocaleDateString()) {
+                                if (doc.exists && doc.data().createdAt) {
+                                    // Sprawdza czy data dokumentu jest równa dzisiejszemu dniu
+                                    if (doc.data().createdAt === new Date().toLocaleDateString()) {
                                         buildTemplate(dailyRecipeTemplate(doc.data().recipeData), document.getElementById('welcome-page'), true);
-                                    } else if (respond.docs[respond.docs.length - 1].data().createdAt.toDate().toLocaleDateString() !== new Date().toLocaleDateString()) {
-                                        firestore.collection('dailyRecipes').doc(create_UUID()).set({
+                                    // Sprawdza czy ostatnia wartosc (ostatnia data) w dokumentach z kolekcji nie jest dniem dzisiejszym
+                                    } else if (respond.docs[respond.docs.length - 1].data().createdAt !== new Date().toLocaleDateString()) {
+                                        firestore.collection('dailyRecipes').doc(date).set({
                                             'recipeData': this.publicRecipes[randomNumber],
                                             'createdAt': date,
                                             'auto': true
@@ -543,9 +547,9 @@ window.onload = () => {
                                     }
                                 }
                             });
+                        // Jeśli nie istnieje to tworzy nową
                         } else {
-                            console.log('NIC')
-                            firestore.collection('dailyRecipes').doc(create_UUID()).set({
+                            firestore.collection('dailyRecipes').doc(date).set({
                                 'recipeData': this.publicRecipes[randomNumber],
                                 'createdAt': date,
                                 'auto': true
