@@ -1,6 +1,7 @@
 window.onload = () => {
     const localStorage = window.localStorage;
     this.user = JSON.parse(localStorage.getItem('userData')) || {};
+    this.publicRecipes = [];
     console.log('__HELLO___FIRIEND__', this.user);
     // Funkcje firebasowe jako stałe
     const firestore = firebase.firestore();
@@ -112,7 +113,7 @@ window.onload = () => {
     `;
     const getIngredients = (ingredients) => {
         return ingredients.map(ing => {
-            return `<li>${ing}</li>`
+            return `<li>${ing}</li>`;
         }).join('');
     }
 
@@ -124,6 +125,10 @@ window.onload = () => {
                 <label>
                     <b>Nazwa potrawy</b>
                     <input type="text" placeholder="Nazwa potrawy" name="recipeName"/>
+                </label>
+                <label>
+                    <b>Publiczny</b>
+                    <input name="public" type="checkbox"/>
                 </label>
                 <label>
                     <b>Link do zdjęcia</b>
@@ -204,6 +209,22 @@ window.onload = () => {
             </form>
         </div>
     `;
+    const dailyRecipeTemplate = (recipeData) => `
+        <div id="daily-recipe">
+            <h1>Danie dnia</h1>
+            <img src="${recipeData.imageUrl}" alt="${recipeData.name}"/>
+            <div class="recipe-details">
+                <h2>${recipeData.name}</h2>
+                <h3>Składniki</h3>
+                <ul class="recipe-ingredients">
+                    ${getIngredients(recipeData.ingredients)}
+                </ul>
+                <p>
+                    ${recipeData.description}
+                </p>
+            </div>
+        </div>
+    `;
 
     const checkIfRecipesExists = (data) => {
         if (data.recipes) {
@@ -211,7 +232,7 @@ window.onload = () => {
                 return `
                     <div class="recipe-box">
                         <div class="box-header">
-                            <h3>${recipe.name}</h3>
+                            <h3>${recipe.name}${recipe.public ? ' (publiczny)' : ''}</h3>
                             <button class="delete">Usuń</button>
                         </div>
                         <div class="recipe-details">
@@ -362,7 +383,7 @@ window.onload = () => {
                 createListener('add-ingredient');
                 return document.getElementById(id).addEventListener('submit', e => {
                     e.preventDefault();
-                    const {recipeName, imageUrl, description} = e.target.elements;
+                    const {recipeName, imageUrl, description, public} = e.target.elements;
                     const recipeId = create_UUID();
                     if (recipeName.value && imageUrl.value && description.value && ingredientsList.length) {
                         firestore.collection('users').doc(this.user.id).collection('recipes').doc(recipeId).set({
@@ -371,16 +392,17 @@ window.onload = () => {
                             'name': recipeName.value,
                             'imageUrl': imageUrl.value,
                             'description': description.value,
-                            'ingredients': ingredientsList
+                            'ingredients': ingredientsList,
+                            'public': public.checked
                         }).then(reps => {
                             firestore.collection('users').doc(this.user.id).get().then(userData => {
                                 this.user = {...userData.data()};
                                 getRecipes().then(() => {
                                     localStorage.setItem('userData', JSON.stringify(this.user));
-                                    document.getElementById('add-recipe').reset();
-                                    document.getElementById('add-recipe-modal').remove();
                                     ingredientsList = [];
                                     //TODO: Dodaj info o dodaniu nowego przepisu
+                                    document.getElementById('container').innerHTML = '';
+                                    buildTemplate(foodRecipesTemplate(this.user), document.getElementById('container'), true, true, 'add-food');
                                 });
                             });
                         });
@@ -495,6 +517,45 @@ window.onload = () => {
                         })
                     }).catch(err => alert(err));
                 });
+            case 'get-public-recipes':
+                return firestore.collectionGroup('recipes').where('public', '==', true).get().then(recipes => {
+                    recipes.forEach(doc => {
+                        this.publicRecipes.push(doc.data());
+                    });
+                }).then(() => {
+                    firestore.collection('dailyRecipes').get().then(respond => {
+                        const randomNumber = Math.floor(Math.random() * this.publicRecipes.length);
+                        const date = new Date();
+                        if (respond.size) {
+                            console.log(respond.docs[respond.docs.length - 1].data());
+                            respond.forEach(doc => {
+                                console.log(doc.data(), doc.data().createdAt.toDate().toLocaleDateString(), new Date().toLocaleDateString());
+                                if (doc.exists) {
+                                    if (doc.data().createdAt.toDate().toLocaleDateString() === new Date().toLocaleDateString()) {
+                                        buildTemplate(dailyRecipeTemplate(doc.data().recipeData), document.getElementById('welcome-page'), true);
+                                    } else if (respond.docs[respond.docs.length - 1].data().createdAt.toDate().toLocaleDateString() !== new Date().toLocaleDateString()) {
+                                        firestore.collection('dailyRecipes').doc(create_UUID()).set({
+                                            'recipeData': this.publicRecipes[randomNumber],
+                                            'createdAt': date,
+                                            'auto': true
+                                        });
+                                        buildTemplate(dailyRecipeTemplate(this.publicRecipes[randomNumber]), document.getElementById('welcome-page'), true);
+                                    }
+                                }
+                            });
+                        } else {
+                            console.log('NIC')
+                            firestore.collection('dailyRecipes').doc(create_UUID()).set({
+                                'recipeData': this.publicRecipes[randomNumber],
+                                'createdAt': date,
+                                'auto': true
+                            });
+                            buildTemplate(dailyRecipeTemplate(this.publicRecipes[randomNumber]), document.getElementById('welcome-page'), true);
+                        }
+                    }).catch(err => {
+                        console.log('ERROR', err)
+                    });
+                });
             default: return false;
 
         }
@@ -525,7 +586,7 @@ window.onload = () => {
     if (Object.keys(this.user).length > 0) {
         loggedIn();
     } else {
-        buildTemplate(wellcomeTemplate, main);
+        buildTemplate(wellcomeTemplate, main, true, true, 'get-public-recipes');
         buildTemplate(registrationPageTemplate, document.getElementById('registration-container'), false, true, 'registration');
         buildTemplate(loginPageTemplate, document.getElementById('login-container'), false, true, 'login');
     }

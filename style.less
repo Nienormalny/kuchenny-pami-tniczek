@@ -33,6 +33,27 @@ html {
 }
 * {
     font-family: 'Raleway', sans-serif;
+    /* width */
+    ::-webkit-scrollbar {
+        width: 10px;
+        padding: 5px;
+    }
+    
+    /* Track */
+    ::-webkit-scrollbar-track {
+        width: 15px;
+        background: #f1f1f1;
+    }
+  
+    /* Handle */
+    ::-webkit-scrollbar-thumb {
+        background: #888;
+    }
+  
+    /* Handle on hover */
+    ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
 }
 
 body {
@@ -188,6 +209,8 @@ body {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
+        max-height: 100vh;
+        overflow-y: auto;
         h1 {
             width: 100%;
             text-align: center;
@@ -199,10 +222,8 @@ body {
             display: block;
         }
         & > div {
-            margin: 100px 50px 0 50px;
+            margin: 100px 50px 100px 50px;
             width: calc(50vw - 150px);
-            position: absolute;
-            top: 0;
             &.left-box {
                 left: 0;
             }
@@ -229,7 +250,7 @@ body {
             width: 50vw;
             height: 100vh;
             background-color: @main-color;
-            z-index: -1;
+            z-index: -2;
         }
         &:after {
             content: '';
@@ -240,7 +261,64 @@ body {
             width: 50vw;
             height: 100vh;
             background-color: darken(@main-color, 10%);
-            z-index: -1;
+            z-index: -2;
+        }
+        #daily-recipe {
+            width: 100vw;
+            margin: 0;
+            min-height: 700px;
+            max-height: 700px;
+            position: relative;
+            overflow: hidden;
+            background-color: @font-color;
+            h1 {
+                z-index: 1;
+                position: relative;
+                padding: 25px 0;
+            }
+            h2 {
+                color: @main-color;
+                margin-top: 0;
+            }
+            h3 {
+                color: @font-color;
+                margin-top: 25px;
+            }
+            ul {
+                max-height: 120px;
+                overflow-y: auto;
+            }
+            p {
+                padding: 15px;
+                background-color: #f7f7f7;
+                text-align: center;
+            }
+            img {
+                display: block;
+                width: calc(100vw + 50px);
+                object-fit: cover;
+                filter: blur(5px);
+                position: absolute;
+                z-index: 0;
+                top: -10px;
+                left: -25px;
+                transform: translateY(-35%);
+                opacity: 0.7;
+            }
+            .recipe-details {
+                display: block;
+                width: 500px;
+                max-height: 400px;
+                background-color: white;
+                padding: 25px;
+                border-radius: 5px;
+                position: absolute;
+                z-index: 1;
+                top: calc(50% + 40px);
+                left: 50%;
+                transform: translate(-50%, -50%);
+                box-shadow: 0 20px 40px -20px black;
+            }
         }
     }
     #color-settings-page {
