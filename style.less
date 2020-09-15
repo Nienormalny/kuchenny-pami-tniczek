@@ -9,6 +9,19 @@
 @transparent-background: rgba(0,0,0,0.75);
 @border-color: darken(@main-color, 30%);
 
+@border: 5px solid @main-color;
+@display: block;
+@height: 100px;
+@width: 100px;
+
+.test {
+    border: @border;
+    display: @display;
+    width: @width;
+    height: @height;
+    background-color: #333;
+}
+
 .btn-standard(@background-color, @border-color, @font-color) {
     background-color: @background-color;
     border: 0;
@@ -38,18 +51,18 @@ html {
         width: 10px;
         padding: 5px;
     }
-    
+
     /* Track */
     ::-webkit-scrollbar-track {
         width: 15px;
         background: #f1f1f1;
     }
-  
+
     /* Handle */
     ::-webkit-scrollbar-thumb {
         background: #888;
     }
-  
+
     /* Handle on hover */
     ::-webkit-scrollbar-thumb:hover {
         background: #555;
@@ -69,6 +82,10 @@ body {
         transition: all 0.5s ease;
         border: 10px solid @border-color;
         background-color: #333;
+    }
+    #profile-settings {
+        max-height: 400px;
+        overflow-y: auto;
     }
     .sidebar {
         display: block;
@@ -437,6 +454,7 @@ body {
                 position: fixed;
                 bottom: 25px;
                 right: 25px;
+                z-index: 10;
                 transform: scale(0.7);
                 transition: all 0.5s ease;
                 &:hover {
@@ -716,8 +734,176 @@ body {
     }
     #logout {
         position: fixed;
+        z-index: 999;
         top: 25px;
         right: 25px;
         .btn-standard(@cancel-color, darken(@cancel-color, 30%), white);
+    }
+}
+
+@media screen and (max-width: 769px) {
+    #main {
+        #welcome-page {
+            background-color: @main-color;
+            &:before,
+            &:after {
+                display: none;
+            }
+            .left-box,
+            .right-box {
+                width: 100%;
+                margin: 0;
+                padding: 25px 25px 50px;
+                h2 {
+                    margin-top: 0;
+                }
+            }
+            .right-box {
+                background-color: lighten(@main-color, 10%);
+            }
+            #daily-recipe {
+                height: 100vh;
+                max-height: 100vh;
+                img {
+                    height: calc(100vh + 50px);
+                    transform: translateY(-25px);
+                    filter: none;
+                }
+                .recipe-details {
+                    width: calc(100vw - 100px);
+                }
+            }
+        }
+        #panel {
+            height: 100vh;
+            #container {
+                #add-recipe-modal {
+                    width: calc(100% - 20px);
+                }
+                &:before {
+                    position: fixed;
+                }
+                .recipe-box {
+                    border-right: 0;
+                    width: calc(100% - 20px);
+                    left: 0;
+                    display: grid;
+                    grid-template-rows: auto auto auto;
+                    img {
+                        position: relative;
+                        grid-row-start: 2;
+                        top: 0;
+                        left: 50%;
+                        right: 0;
+                        margin-top: 25px;
+                        box-shadow: none;
+                        transform: translateX(-50%);
+                    }
+                    h3 {
+                        margin: 5px 0;
+                    }
+                    .box-header {
+                        padding: 5px 10px;
+                        grid-row-start: 1;
+                        button {
+                            margin-right: 0;
+                        }
+                    }
+                    &:after {
+                        display: none;
+                    }
+                }
+            }
+        }
+        .sidebar {
+            position: fixed;
+            display: block;
+            width: 80vw;
+            height: 80vh;
+            left: 50%;
+            top: auto;
+            bottom: 25px;
+            z-index: 999;
+            overflow: hidden;
+            opacity: 1;
+            transform: translateX(-50%);
+            .nav {
+                li {
+                    text-align: center;
+                }
+            }
+            #collapse-btn {
+                transform: translateX(-50%) rotate(225deg);
+                left: 50%;
+                bottom: 30px;
+                span:not(.mobile) {
+                    display: none;
+                }
+                .mobile {
+                    display: block;
+                    & > span {
+                        display: block;
+                        height: 5px;
+                        width: 30px;
+                        background-color: white;
+                        margin: 3px;
+                        position: relative;
+                        &.line-2 {
+                            right: -50px;
+                            opacity: 0;
+                            z-index: -999;
+                            pointer-events: none;
+                        }
+                        &.line-1, &.line-3 {
+                            position: absolute;
+                            top: calc(50% - 3px);
+                            left: calc(50% - 3px);
+                            transform: translate(-50%, -50%);
+                        }
+                        &.line-1 {
+                            transform: translate(-50%, -50%) rotate(90deg);
+                        }
+                    }
+                }
+            }
+            &.collapsed {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                #collapse-btn {
+                    bottom: 25px;
+                    transform: translate(-50%, 40%) rotate(0);
+                    .mobile {
+                        display: block;
+                        & > span {
+                            transition: all 0.5s ease;
+                            display: block;
+                            height: 5px;
+                            width: 30px;
+                            background-color: white;
+                            margin: 3px;
+                            transition: all 0.5s ease;
+                            opacity: 1;
+                            right: 0;
+                            transform: none;
+                            position: relative;
+                            left: 0;
+                            top: 2px;
+                        }
+                    }
+                }
+                .nav, .user-panel {
+                    opacity: 0;
+                    display: none;
+                }
+            }
+        }
+        form {
+            max-width: inherit;
+        }
+        #close-recipe-modal {
+            right: 0;
+            top: -80px;
+        }
     }
 }

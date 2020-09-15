@@ -6,6 +6,9 @@ window.onload = () => {
     // Funkcje firebasowe jako stałe
     const firestore = firebase.firestore();
     const auth = firebase.auth();
+    const storage = firebase.storage();
+    const storageRef = storage.ref();
+    const profileImages = storageRef.child('images/profiles');
 
     // Odwołanie do elmentów w html
     const main = document.getElementById('main');
@@ -17,6 +20,11 @@ window.onload = () => {
         'background-secondary': '#d9d9d9',
         'main-color': '#41BCFF',
         'font-color': '#333333'
+    }
+    const imageOptions = {
+        maxHeight: 400,
+        maxWidth: 400,
+        image: null
     }
 
     // Stałe / Zmienne
@@ -85,7 +93,14 @@ window.onload = () => {
             <li id="edit-profile"><span>Edytuj Profil</span><span>EP</span></li>
             <li id="edit-colors"><span>Zmien Kolor</span><span>ZK</span></li>
         </ul>
-        <span id="collapse-btn"><</span>
+        <div id="collapse-btn">
+            <span><</span>
+            <div class="mobile">
+                <span class="line-1"></span>
+                <span class="line-2"></span>
+                <span class="line-3"></span>
+            </div>
+        </div>
     </div>`;
     // === SIDEBAR -> USER PANEL === //
     const userPanelTemplate = (data) => `<div class="user-panel">
@@ -95,10 +110,11 @@ window.onload = () => {
         <p class="email">${data.email}</p>
     </div>`;
     // === PRAWA CZĘŚĆ STRONY PO ZALOGOWANIU === //
-    const panelTemplate = `<section id="panel">
+    const panelTemplate = (data) => `<section id="panel">
         <div id="container">
             <div class="logged-info">
-                <h1>Witaj ${this.user.name}!</h1>
+                <h1>Witaj ${data.name}!</h1>
+                <div class="test"></div>
                 <h2>Co dzisiaj jemy?</h2>
             </div>
         </div>
@@ -202,6 +218,11 @@ window.onload = () => {
                     <input name="image" type="text" placeholder="${data.image || 'Link do zdjęcia'}"/>
                 </label>
                 <label>
+                    <b>Link do zdjęcia</b>
+                    <input name="imageFile" id="upload-avatar" type="file"/>
+                    <div id="preview"></div>
+                </label>
+                <label>
                     <b>Kolor ramki zdjęcia</b>
                     <input class="border-image-color" name="borderColor" type="text" placeholder="${data['border-color']}"/>
                 </label>
@@ -262,7 +283,7 @@ window.onload = () => {
             /* @background-secondary */ 'background-secondary': this.user.theme['background-secondary']
         });
         // Budujemy template z eventListenerem dla przycisku Logout
-        buildTemplate(panelTemplate, main, false, true, 'logout');
+        buildTemplate(panelTemplate(this.user), main, false, true, 'logout');
         // Budujemy template sidebar
         buildTemplate(sidebarTemplate, document.getElementById('panel'), true);
         createListener('edit-colors');
@@ -448,40 +469,83 @@ window.onload = () => {
                     buildTemplate(profileSettingsTemplate(this.user), document.getElementById('container'), true, true, 'profile-settings-page');
                 });
             case 'profile-settings-page':
+                document.getElementById('upload-avatar').addEventListener('change', (e) => {
+                    processFile(e.target.files[0]);
+                });
+                let imageUrl = '';
                 return document.getElementById(id).addEventListener('submit', e => {
                     e.preventDefault();
-                    const {name, surname, borderColor, image} = e.target.elements;
-                    firestore.collection('users').doc(this.user.id).update({
-                        'border-color': borderColor.value || borderColor.placeholder,
-                        'name': name.value || name.placeholder,
-                        'surname': surname.value || surname.placeholder,
-                        'image': image.value || image.placeholder
-                    }).then(resp => {
-                        firestore.collection('users').doc(this.user.id).get().then(userData => {
-                            if (userData.exists) {
-                                this.user = {...userData.data()};
-                                localStorage.setItem('userData', JSON.stringify(this.user));
-                                less.modifyVars({
-                                    /* @main-color */ 'main-color': this.user.theme['main-color'],
-                                    /* @background */ 'background': this.user.theme['background-main'],
-                                    /* @font-color */ 'font-color': this.user.theme['font-color'],
-                                    /* @border-color */ 'border-color': this.user['border-color'],
-                                    /* @background-secondary */ 'background-secondary': this.user.theme['background-secondary']
+                    const {name, surname, borderColor} = e.target.elements;
+                    if (imageOptions.image) {
+                        profileImages.child(`${this.user.id}-avatar`).put(imageOptions.image).then(el => {
+                            storageRef.child(el.metadata.fullPath).getDownloadURL().then(url => {
+                                imageUrl = url;
+                                firestore.collection('users').doc(this.user.id).update({
+                                    'border-color': borderColor.value || borderColor.placeholder,
+                                    'name': name.value || name.placeholder,
+                                    'surname': surname.value || surname.placeholder,
+                                    'image': url
+                                }).then(resp => {
+                                    firestore.collection('users').doc(this.user.id).get().then(userData => {
+                                        if (userData.exists) {
+                                            this.user = {...userData.data()};
+                                            localStorage.setItem('userData', JSON.stringify(this.user));
+                                            less.modifyVars({
+                                                /* @main-color */ 'main-color': this.user.theme['main-color'],
+                                                /* @background */ 'background': this.user.theme['background-main'],
+                                                /* @font-color */ 'font-color': this.user.theme['font-color'],
+                                                /* @border-color */ 'border-color': this.user['border-color'],
+                                                /* @background-secondary */ 'background-secondary': this.user.theme['background-secondary']
+                                            });
+                                            document.querySelector('.user-panel').remove();
+                                            console.dir(document.querySelector('.profile-box'));
+                                            document.querySelector('.profile-box').children[0].setAttribute('src', this.user.image);
+            
+                                            buildTemplate(userPanelTemplate(this.user), document.querySelector('.sidebar'), true);
+                                            getRecipes().then(() => {
+                                                localStorage.setItem('userData', JSON.stringify(this.user));
+                                                //TODO: Dodaj info o dodaniu nowego przepisu
+                                            });
+                                        } else {
+                                            errorMsg = 'Ten użytkownik nie istnieje, prosze spróbować ponownie';
+                                        }
+                                    });
                                 });
-                                document.querySelector('.user-panel').remove();
-                                console.dir(document.querySelector('.profile-box'));
-                                document.querySelector('.profile-box').children[0].setAttribute('src', this.user.image);
-
-                                buildTemplate(userPanelTemplate(this.user), document.querySelector('.sidebar'), true);
-                                getRecipes().then(() => {
-                                    localStorage.setItem('userData', JSON.stringify(this.user));
-                                    //TODO: Dodaj info o dodaniu nowego przepisu
-                                });
-                            } else {
-                                errorMsg = 'Ten użytkownik nie istnieje, prosze spróbować ponownie';
-                            }
+                            });
                         });
-                    });
+                    } else {
+                        firestore.collection('users').doc(this.user.id).update({
+                            'border-color': borderColor.value || borderColor.placeholder,
+                            'name': name.value || name.placeholder,
+                            'surname': surname.value || surname.placeholder,
+                            'image': imageUrl || this.user.image
+                        }).then(resp => {
+                            firestore.collection('users').doc(this.user.id).get().then(userData => {
+                                if (userData.exists) {
+                                    this.user = {...userData.data()};
+                                    localStorage.setItem('userData', JSON.stringify(this.user));
+                                    less.modifyVars({
+                                        /* @main-color */ 'main-color': this.user.theme['main-color'],
+                                        /* @background */ 'background': this.user.theme['background-main'],
+                                        /* @font-color */ 'font-color': this.user.theme['font-color'],
+                                        /* @border-color */ 'border-color': this.user['border-color'],
+                                        /* @background-secondary */ 'background-secondary': this.user.theme['background-secondary']
+                                    });
+                                    document.querySelector('.user-panel').remove();
+                                    console.dir(document.querySelector('.profile-box'));
+                                    document.querySelector('.profile-box').children[0].setAttribute('src', this.user.image);
+    
+                                    buildTemplate(userPanelTemplate(this.user), document.querySelector('.sidebar'), true);
+                                    getRecipes().then(() => {
+                                        localStorage.setItem('userData', JSON.stringify(this.user));
+                                        //TODO: Dodaj info o dodaniu nowego przepisu
+                                    });
+                                } else {
+                                    errorMsg = 'Ten użytkownik nie istnieje, prosze spróbować ponownie';
+                                }
+                            });
+                        });
+                    }
                 })
             case 'colors-settings':
                 return document.getElementById('colors-settings').addEventListener('submit', e => {
@@ -585,6 +649,78 @@ window.onload = () => {
             return (c=='x' ? r :(r&0x3|0x8)).toString(16);
         });
         return uuid;
+    }
+    const dataURItoBlob = (dataURI) => {
+        // convert base64/URLEncoded data component to raw binary data held in a string
+        var byteString;
+        if (dataURI.split(',')[0].indexOf('base64') >= 0)
+            byteString = atob(dataURI.split(',')[1]);
+        else
+            byteString = unescape(dataURI.split(',')[1]);
+    
+        // separate out the mime component
+        var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    
+        // write the bytes of the string to a typed array
+        var ia = new Uint8Array(byteString.length);
+        for (var i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+    
+        return new Blob([ia], {type:mimeString});
+    }
+    const resizeMe = (img) => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+            if (width > imageOptions.maxWidth) {
+                height = Math.round(height *= imageOptions.maxWidth / width);
+                width = imageOptions.maxWidth;
+            }
+        } else {
+            if (height > imageOptions.maxHeight) {
+                width = Math.round(width *= imageOptions.maxHeight / height);
+                height = imageOptions.maxHeight;
+            }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        document.getElementById('preview').appendChild(canvas);
+        return canvas.toDataURL("image/jpeg", 0.7);
+    }
+    const processFile = (file) => {
+        if (!(/image/i).test(file.type)) {
+            alert("Plik" + file.name + "nie jest zdjęciem.");
+            return false;
+        }
+        const form = document.getElementById('profile-settings');
+
+        const reader = new FileReader();
+        reader.readAsArrayBuffer(file);
+
+        reader.onload = event => {
+            // Blob
+            const blob = new Blob([event.target.result]); // Tworzymy blob
+            window.URL = window.URL || window.webkitURL;
+            const blobURL = window.URL.createObjectURL(blob); // Pobieramy link do bloba
+
+            const image = new Image();
+            image.src = blobURL;
+            image.onload = () => {
+                const resized = resizeMe(image);
+                const newinput = document.createElement('input');
+                newinput.type = 'hidden';
+                newinput.name = 'avImage';
+                newinput.value = resized;
+                imageOptions.image = dataURItoBlob(resized);;
+                form.appendChild(newinput);
+            }
+        }
     }
 
     if (Object.keys(this.user).length > 0) {
