@@ -9,19 +9,6 @@
 @transparent-background: rgba(0,0,0,0.75);
 @border-color: darken(@main-color, 30%);
 
-@border: 5px solid @main-color;
-@display: block;
-@height: 100px;
-@width: 100px;
-
-.test {
-    border: @border;
-    display: @display;
-    width: @width;
-    height: @height;
-    background-color: #333;
-}
-
 .btn-standard(@background-color, @border-color, @font-color) {
     background-color: @background-color;
     border: 0;
@@ -45,6 +32,7 @@ html {
     color: @font-color;
 }
 * {
+    box-sizing: border-box;
     font-family: 'Raleway', sans-serif;
     /* width */
     ::-webkit-scrollbar {
@@ -86,6 +74,13 @@ body {
     #profile-settings {
         max-height: 400px;
         overflow-y: auto;
+    }
+    .error-msg {
+        padding: 5px;
+        background-color: white;
+        border: 1px solid @cancel-color;
+        color: @cancel-color;
+        border-radius: 3px;
     }
     .sidebar {
         display: block;
@@ -373,7 +368,6 @@ body {
             }
         }
         #colors-settings {
-            margin: auto 0 0 0;
             label {
                 flex-direction: unset;
                 align-items: center;
@@ -603,12 +597,23 @@ body {
             margin: 5px 0;
             display: flex;
             flex-direction: column;
+            position: relative;
             b {
                 letter-spacing: 1px;
             }
             input {
                 margin-top: 5px;
                 margin-bottom: 15px;
+            }
+            &.error {
+                color: @cancel-color;
+                input {
+                    border: 1px solid @cancel-color;
+                    color: @cancel-color;
+                }
+                input::placeholder {
+                    color: @cancel-color;
+                }
             }
         }
     }
@@ -777,6 +782,7 @@ body {
         #panel {
             height: 100vh;
             #container {
+                width: 100vw;
                 #add-recipe-modal {
                     width: calc(100% - 20px);
                 }
@@ -836,6 +842,10 @@ body {
                 transform: translateX(-50%) rotate(225deg);
                 left: 50%;
                 bottom: 30px;
+                &::selection {
+                    display: none;
+                    background-color: transparent;
+                }
                 span:not(.mobile) {
                     display: none;
                 }
@@ -900,10 +910,27 @@ body {
         }
         form {
             max-width: inherit;
+            width: 100%;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+        #profile-settings-page,
+        #color-settings-page {
+            width: 100%;
+            label > b {
+                font-size: 0.8rem;
+                text-align: right;
+            }
         }
         #close-recipe-modal {
-            right: 0;
-            top: -80px;
+            width: 100%;
+            right: 0 !important;
+            top: -80px !important;
+        }
+        #preview > canvas {
+            width: 50%;
+            margin: auto;
+            display: block;
         }
     }
 }

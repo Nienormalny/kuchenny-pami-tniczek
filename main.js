@@ -9,6 +9,7 @@ window.onload = () => {
     const storage = firebase.storage();
     const storageRef = storage.ref();
     const profileImages = storageRef.child('images/profiles');
+    const recipesImages = storageRef.child('images/recipes');
 
     // Odwołanie do elmentów w html
     const main = document.getElementById('main');
@@ -114,7 +115,6 @@ window.onload = () => {
         <div id="container">
             <div class="logged-info">
                 <h1>Witaj ${data.name}!</h1>
-                <div class="test"></div>
                 <h2>Co dzisiaj jemy?</h2>
             </div>
         </div>
@@ -148,7 +148,8 @@ window.onload = () => {
                 </label>
                 <label>
                     <b>Link do zdjęcia</b>
-                    <input name="imageUrl" type="text" placeholder="Link do zdjęcia"/>
+                    <input name="imageFile" type="file" id="upload-recipe-image"/>
+                    <div id="preview"></div>
                 </label>
                 <label id="ingredients">
                     <b>Składniki</b>
@@ -214,11 +215,7 @@ window.onload = () => {
                     <input name="surname" type="text" placeholder="${data.surname}"/>
                 </label>
                 <label>
-                    <b>Link do zdjęcia</b>
-                    <input name="image" type="text" placeholder="${data.image || 'Link do zdjęcia'}"/>
-                </label>
-                <label>
-                    <b>Link do zdjęcia</b>
+                    <b>Dodaj fote</b>
                     <input name="imageFile" id="upload-avatar" type="file"/>
                     <div id="preview"></div>
                 </label>
@@ -377,11 +374,18 @@ window.onload = () => {
                 }, true);
             // Sidebar toggle listener
             case 'collapse-sidebar':
-                return document.getElementById('collapse-btn').addEventListener('click', e => document.querySelector('.sidebar').classList.toggle('collapsed'), true);
-            case 'food-recipes':
-                return document.getElementById(id).addEventListener('click', e => {
-                    document.getElementById('container').innerHTML = '';
-                    document.getElementById('nav').querySelectorAll('li').forEach((el) => {
+                return document.getElementById('collapse-btn').addEventListener('click', e => {
+                    if (window.innerWidth < 769 && document.querySelector('.sidebar').classList.contains('collapsed')) {
+                        document.getElementById('nav').addEventListener('click', (el) => {
+                            document.querySelector('.sidebar').classList.add('collapsed');
+                        });
+                    }
+                    document.querySelector('.sidebar').classList.toggle('collapsed');
+                }, true);
+                case 'food-recipes':
+                    return document.getElementById(id).addEventListener('click', e => {
+                        document.getElementById('container').innerHTML = '';
+                        document.getElementById('nav').querySelectorAll('li').forEach((el) => {
                         if (el.classList.contains('active') && !document.isEqualNode(el, e.target)) {
                             el.classList.remove('active');
                         }
@@ -402,49 +406,80 @@ window.onload = () => {
                 })
             case 'add-recipe':
                 createListener('add-ingredient');
+                document.getElementById('upload-recipe-image').addEventListener('change', (e) => {
+                    processFile(e.target.files[0], 'add-recipe');
+                });
                 return document.getElementById(id).addEventListener('submit', e => {
                     e.preventDefault();
                     const {recipeName, imageUrl, description, public} = e.target.elements;
                     const recipeId = create_UUID();
-                    if (recipeName.value && imageUrl.value && description.value && ingredientsList.length) {
-                        firestore.collection('users').doc(this.user.id).collection('recipes').doc(recipeId).set({
-                            'id': recipeId,
-                            'createdAt': new Date(),
-                            'name': recipeName.value,
-                            'imageUrl': imageUrl.value,
-                            'description': description.value,
-                            'ingredients': ingredientsList,
-                            'public': public.checked
-                        }).then(reps => {
-                            firestore.collection('users').doc(this.user.id).get().then(userData => {
-                                this.user = {...userData.data()};
-                                getRecipes().then(() => {
-                                    localStorage.setItem('userData', JSON.stringify(this.user));
-                                    ingredientsList = [];
-                                    //TODO: Dodaj info o dodaniu nowego przepisu
-                                    document.getElementById('container').innerHTML = '';
-                                    buildTemplate(foodRecipesTemplate(this.user), document.getElementById('container'), true, true, 'add-food');
+                    if (recipeName.value && description.value && ingredientsList.length && imageOptions.image) {
+                        recipesImages.child(`${this.user.id}-recipe-images/${recipeId}`).put(imageOptions.image).then(el => {
+                            storageRef.child(el.metadata.fullPath).getDownloadURL().then(url => {
+                                firestore.collection('users').doc(this.user.id).collection('recipes').doc(recipeId).set({
+                                    'id': recipeId,
+                                    'createdAt': new Date(),
+                                    'name': recipeName.value,
+                                    'imageUrl': url,
+                                    'description': description.value,
+                                    'ingredients': ingredientsList,
+                                    'public': public.checked
+                                }).then(reps => {
+                                    firestore.collection('users').doc(this.user.id).get().then(userData => {
+                                        this.user = {...userData.data()};
+                                        getRecipes().then(() => {
+                                            localStorage.setItem('userData', JSON.stringify(this.user));
+                                            ingredientsList = [];
+                                            //TODO: Dodaj info o dodaniu nowego przepisu
+                                            document.getElementById('container').innerHTML = '';
+                                            buildTemplate(foodRecipesTemplate(this.user), document.getElementById('container'), true, true, 'add-food');
+                                        });
+                                    });
                                 });
                             });
                         });
+                    } else {
+                        if (!recipeName.value || !ingredientsList.length) {
+                            recipeName.parentElement.classList.add('error');
+                        }
+                        if (!ingredientsList.length) {
+                            document.getElementById('ingredients').classList.add('error');
+                        }
+                        if (!description.value) {
+                            description.parentElement.classList.add('error');
+                        }
+                        if (!imageOptions.image) {
+                            document.getElementById('upload-recipe-image').parentElement.classList.add('error');
+                        }
+                        buildTemplate(`<p class="error-msg">Prosze wypełnić pola zaznaczone na czerwono!</p>`, document.getElementById('add-recipe'), true);
                     }
                 });
             case 'add-ingredient':
                 createListener('remove-ingredient');
                 return document.getElementById(id).addEventListener('click', e => {
-                    e.preventDefault();
-                    numberOfIngredients++;
                     const inputValue = document.getElementById('ingredient').value;
-                    ingredientsList.push(inputValue.replace(' ', '-'));
-                    buildTemplate(ingredientLiTemplate(inputValue, `ingredient-${numberOfIngredients}`), document.getElementById('ingredients-list'));
-                    document.getElementById('ingredient').value = '';
+                    e.preventDefault();
+                    if (inputValue) {
+                        numberOfIngredients++;
+                        ingredientsList.push(inputValue.replace(' ', '-'));
+                        buildTemplate(ingredientLiTemplate(inputValue, `ingredient-${numberOfIngredients}`), document.getElementById('ingredients-list'));
+                        document.getElementById('ingredient').value = '';
+                    } else {
+                        document.getElementById('ingredients').classList.add('error');
+                    }
                 });
             case 'remove-ingredient':
                 return document.getElementById('ingredients-list').addEventListener('click', e => {
                     e.preventDefault();
                     const index = ingredientsList.indexOf();
                     ingredientsList = ingredientsList.filter(item => item !== e.target.parentElement.innerText.replace(' ', '-'));
-                    e.target.parentElement.remove();
+                    console.dir(e.target);
+                    if (e.target.localName === 'li') {
+                        e.target.remove();
+                    }
+                    if (e.target.localName === 'button') {
+                        e.target.parentElement.remove();
+                    }
                 });
             case 'edit-colors':
                 return document.getElementById(id).addEventListener('click', e => {
@@ -470,7 +505,7 @@ window.onload = () => {
                 });
             case 'profile-settings-page':
                 document.getElementById('upload-avatar').addEventListener('change', (e) => {
-                    processFile(e.target.files[0]);
+                    processFile(e.target.files[0], 'profile-settings');
                 });
                 let imageUrl = '';
                 return document.getElementById(id).addEventListener('submit', e => {
@@ -595,22 +630,24 @@ window.onload = () => {
                         const date = new Date().toLocaleDateString();
                         // Sprawdza czy dailyRecipes kolekcja istnieje
                         if (respond.size) {
-                            respond.forEach(doc => {
-                                if (doc.exists && doc.data().createdAt) {
-                                    // Sprawdza czy data dokumentu jest równa dzisiejszemu dniu
-                                    if (doc.data().createdAt === new Date().toLocaleDateString()) {
-                                        buildTemplate(dailyRecipeTemplate(doc.data().recipeData), document.getElementById('welcome-page'), true);
-                                    // Sprawdza czy ostatnia wartosc (ostatnia data) w dokumentach z kolekcji nie jest dniem dzisiejszym
-                                    } else if (respond.docs[respond.docs.length - 1].data().createdAt !== new Date().toLocaleDateString()) {
-                                        firestore.collection('dailyRecipes').doc(date).set({
-                                            'recipeData': this.publicRecipes[randomNumber],
-                                            'createdAt': date,
-                                            'auto': true
-                                        });
-                                        buildTemplate(dailyRecipeTemplate(this.publicRecipes[randomNumber]), document.getElementById('welcome-page'), true);
+                            if (respond.docs[respond.docs.length - 1].data().createdAt !== new Date().toLocaleDateString()) {
+                                firestore.collection('dailyRecipes').doc(date).set({
+                                    'recipeData': this.publicRecipes[randomNumber],
+                                    'createdAt': date,
+                                    'auto': true
+                                });
+                                buildTemplate(dailyRecipeTemplate(this.publicRecipes[randomNumber]), document.getElementById('welcome-page'), true);
+                            } else {
+                                respond.forEach(doc => {
+                                    if (doc.exists && doc.data().createdAt) {
+                                        // Sprawdza czy data dokumentu jest równa dzisiejszemu dniu
+                                        if (doc.data().createdAt === new Date().toLocaleDateString()) {
+                                            buildTemplate(dailyRecipeTemplate(doc.data().recipeData), document.getElementById('welcome-page'), true);
+                                        // Sprawdza czy ostatnia wartosc (ostatnia data) w dokumentach z kolekcji nie jest dniem dzisiejszym
+                                        }
                                     }
-                                }
-                            });
+                                });
+                            }
                         // Jeśli nie istnieje to tworzy nową
                         } else {
                             firestore.collection('dailyRecipes').doc(date).set({
@@ -693,12 +730,12 @@ window.onload = () => {
         document.getElementById('preview').appendChild(canvas);
         return canvas.toDataURL("image/jpeg", 0.7);
     }
-    const processFile = (file) => {
+    const processFile = (file, formId) => {
         if (!(/image/i).test(file.type)) {
             alert("Plik" + file.name + "nie jest zdjęciem.");
             return false;
         }
-        const form = document.getElementById('profile-settings');
+        const form = document.getElementById(formId);
 
         const reader = new FileReader();
         reader.readAsArrayBuffer(file);
