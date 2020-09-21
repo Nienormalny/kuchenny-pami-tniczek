@@ -9,6 +9,17 @@
 @transparent-background: rgba(0,0,0,0.75);
 @border-color: darken(@main-color, 30%);
 
+@keyframes success-msg {
+    0% {
+        top: -100px;
+        opacity: 0;
+    }
+    100% {
+        top: -10px;
+        opacity: 1;
+    }
+}
+
 .btn-standard(@background-color, @border-color, @font-color) {
     background-color: @background-color;
     border: 0;
@@ -81,6 +92,24 @@ body {
         border: 1px solid @cancel-color;
         color: @cancel-color;
         border-radius: 3px;
+    }
+    .success-msg {
+        padding: 10px 25px;
+        font-size: 2rem;
+        box-shadow: 0 5px 15px -5px black;
+        background-color: @accept-color;
+        color: white;
+        border-radius: 3px;
+        animation-name: success-msg;
+        animation-duration: 0.5s;
+        animation-timing-function: cubic-bezier(.48,.41,.51,.87);
+        animation-fill-mode: forwards;
+        position: fixed;
+        top: -100px;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        z-index: 999;
     }
     .sidebar {
         display: block;
@@ -614,6 +643,19 @@ body {
                 input::placeholder {
                     color: @cancel-color;
                 }
+                &:before {
+                    content: attr(data-error-msg);
+                    display: block;
+                    padding: 5px 10px;
+                    border-radius: 3px;
+                }
+            }
+        }
+        &#registration {
+            .error:before {
+                background-color: @cancel-color;
+                color: white;
+                margin-bottom: 5px;
             }
         }
     }
