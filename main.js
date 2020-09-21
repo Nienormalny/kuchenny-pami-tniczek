@@ -22,6 +22,11 @@ window.onload = () => {
         'main-color': '#41BCFF',
         'font-color': '#333333'
     }
+    const regexp = {
+        password: /([A-Z]{1}([a-z]+)\#[0-9]+)/,
+        name: /([A-z]{3,})/,
+        email: /([A-Za-z0-9]+\@[A-Za-z0-9]+\.[a-z])\w+/
+    }
     const imageOptions = {
         maxHeight: 400,
         maxWidth: 400,
@@ -270,6 +275,9 @@ window.onload = () => {
         }
     }
 
+    const errMsgTemplate = `<p class="error-msg">Prosze wypełnić pola zaznaczone na czerwono!</p>`;
+    const successMsgTemplate = (msg) => `<p class="success-msg">${msg}</p>`;
+
     const loggedIn = () => {
         // nadajemy kolory zdefiniowanym zmiennym w style.less
         less.modifyVars({
@@ -303,17 +311,87 @@ window.onload = () => {
             resp.forEach(doc => this.user = {...this.user, 'recipes': [...this.user.recipes, {...doc.data()}]});
         });
     }
+    const validateInputs = (id, namesArr) => {
+        const failed = [];
+        namesArr.forEach(name => {
+            const inputEl = document.getElementById(id).querySelector(`[name="${name}"]`);
+            switch (name) {
+                case 'name':
+                    if (!regexp.name.test(inputEl.value)) {
+                        inputEl.parentElement.classList.add('error');
+                        failed.push(inputEl);
+                        inputEl.parentElement.dataset.errorMsg = 'Minimum 3 znaki.';
+                    } else {
+                        console.log(inputEl.value)
+                        inputEl.parentElement.classList.remove('error');
+                        inputEl.parentElement.removeAttribute('data-error-msg');
+                    }
+                    return;
+                case 'surname':
+                    if (!regexp.name.test(inputEl.value)) {
+                        inputEl.parentElement.classList.add('error');
+                        failed.push(inputEl);
+                        inputEl.parentElement.dataset.errorMsg = 'Minimum 3 znaki.';
+                    } else {
+                        console.log(inputEl.value)
+                        inputEl.parentElement.classList.remove('error');
+                        inputEl.parentElement.removeAttribute('data-error-msg');
+                    }
+                    return;
+                case 'password':
+                    if (!regexp.password.test(inputEl.value)) {
+                        inputEl.parentElement.classList.add('error');
+                        failed.push(inputEl);
+                        inputEl.parentElement.dataset.errorMsg = 'Hasło powinno zawierać "Tekst" następnie znak "#" i po znaku numerki.';
+                    } else {
+                        inputEl.parentElement.classList.remove('error');
+                        inputEl.parentElement.removeAttribute('data-error-msg');
+
+                    }
+                    return;
+                case 'email':
+                    if (!regexp.email.test(inputEl.value)) {
+                        inputEl.parentElement.classList.add('error');
+                        inputEl.parentElement.dataset.errorMsg = 'Proszę podać poprawny adres email.';
+                        failed.push(inputEl);
+                    } else {
+                        inputEl.parentElement.classList.remove('error');
+                        inputEl.parentElement.removeAttribute('data-error-msg');
+                    }
+                    return;
+                default:
+                    if (!inputEl.value) {
+                        inputEl.parentElement.classList.add('error');
+                        inputEl.parentElement.dataset.errorMsg = 'Proszę wypełnić puste pole.';
+                        failed.push(inputEl);
+                    } else {
+                        inputEl.parentElement.classList.remove('error');
+                        inputEl.parentElement.removeAttribute('data-error-msg');
+                    }
+                ;
+            }
+        });
+
+        if (!failed.length) {
+            return true;
+        } else {
+            if (!document.getElementById(id).querySelector('.error-msg')) {
+                buildTemplate(errMsgTemplate, document.getElementById(id), true);
+            }
+            return false;
+        }
+    }
     // Funkcja do tworzenia listenerów
     const createListener = (id) => {
         switch (id) {
             // Firebase login listener
             case 'login':
-                return document.getElementById('login').addEventListener('submit', e => {
+                return document.getElementById(id).addEventListener('submit', e => {
                     e.preventDefault();
                     // Pobieramy elementy z <form></form>
                     const {email, password} = e.target.elements;
                     // Sprawdzamy czy inputy z name="email" i name="password" nie jest pusty
-                    if (email.value && password.value) {
+                    if (validateInputs(id, ['email', 'password'])) {
                         auth.signInWithEmailAndPassword(email.value, password.value).then(resp => {
                             /*
                                 Wchodzimy do kolekcji forestore o nazwie "users".
@@ -339,7 +417,7 @@ window.onload = () => {
                     // Podobna funkcja jak podczas logowania
                     const {email, password, name, surname} = e.target.elements;
                     // Podobna validacja jak przy logowaniu
-                    if (email.value && password.value && name.value && surname.value) {
+                    if (validateInputs('registration', ['name', 'surname', 'email', 'password'])) {
                         auth.createUserWithEmailAndPassword(email.value, password.value).then(resp => {
                             /*
                                 Po zarejestrowaniu nowego użytkownika, tworzymy dla niego dokument
@@ -354,6 +432,13 @@ window.onload = () => {
                                 'border-color': borderColor,
                                 'theme': theme,
                                 'createdAt': new Date()
+                            }).then(() => {
+                                document.getElementById('registration').reset();
+                                document.getElementById('registration').querySelector('.error-msg').remove();
+                                buildTemplate(successMsgTemplate('Użytkownik został poprawnie zarejestrowany.'), document.body, true);
+                                setTimeout(() => {
+                                    document.querySelector('.success-msg').remove();
+                                }, 5000);
                             });
                         }).catch(err => {
                             alert(err);
@@ -451,7 +536,7 @@ window.onload = () => {
                         if (!imageOptions.image) {
                             document.getElementById('upload-recipe-image').parentElement.classList.add('error');
                         }
-                        buildTemplate(`<p class="error-msg">Prosze wypełnić pola zaznaczone na czerwono!</p>`, document.getElementById('add-recipe'), true);
+                        buildTemplate(errMsgTemplate, document.getElementById('add-recipe'), true);
                     }
                 });
             case 'add-ingredient':
@@ -535,7 +620,7 @@ window.onload = () => {
                                             document.querySelector('.user-panel').remove();
                                             console.dir(document.querySelector('.profile-box'));
                                             document.querySelector('.profile-box').children[0].setAttribute('src', this.user.image);
-            
+
                                             buildTemplate(userPanelTemplate(this.user), document.querySelector('.sidebar'), true);
                                             getRecipes().then(() => {
                                                 localStorage.setItem('userData', JSON.stringify(this.user));
@@ -569,7 +654,7 @@ window.onload = () => {
                                     document.querySelector('.user-panel').remove();
                                     console.dir(document.querySelector('.profile-box'));
                                     document.querySelector('.profile-box').children[0].setAttribute('src', this.user.image);
-    
+
                                     buildTemplate(userPanelTemplate(this.user), document.querySelector('.sidebar'), true);
                                     getRecipes().then(() => {
                                         localStorage.setItem('userData', JSON.stringify(this.user));
@@ -694,16 +779,16 @@ window.onload = () => {
             byteString = atob(dataURI.split(',')[1]);
         else
             byteString = unescape(dataURI.split(',')[1]);
-    
+
         // separate out the mime component
         var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-    
+
         // write the bytes of the string to a typed array
         var ia = new Uint8Array(byteString.length);
         for (var i = 0; i < byteString.length; i++) {
             ia[i] = byteString.charCodeAt(i);
         }
-    
+
         return new Blob([ia], {type:mimeString});
     }
     const resizeMe = (img) => {
