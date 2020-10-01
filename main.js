@@ -791,6 +791,40 @@ window.onload = () => {
 
         return new Blob([ia], {type:mimeString});
     }
+    const showPreview = (img) => {
+        const preview = document.getElementById('preview');
+        let targetWidth = window.getComputedStyle(preview).width;
+        // cut "px" from width string
+        targetWidth = targetWidth.substr(0, targetWidth.length - 2);
+        targetWidth = Number(targetWidth);
+        let width = img.width;
+        let height = img.height;
+        
+        const scale = targetWidth / width;
+        width *= scale;
+        height *= scale;
+        img.width = width;
+        img.height = height;
+        
+        console.log(targetWidth, img.width, img.height, scale);
+
+        if (height > imageOptions.maxHeight) {
+            const scale = imageOptions.maxHeight / height;
+            width *= scale;
+            height *= scale;
+            img.width = width;
+            img.height = height;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        preview.appendChild(canvas);
+    }
     const resizeMe = (img) => {
         const canvas = document.createElement('canvas');
         let width = img.width;
@@ -812,7 +846,6 @@ window.onload = () => {
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
-        document.getElementById('preview').appendChild(canvas);
         return canvas.toDataURL("image/jpeg", 0.7);
     }
     const processFile = (file, formId) => {
@@ -834,6 +867,7 @@ window.onload = () => {
             const image = new Image();
             image.src = blobURL;
             image.onload = () => {
+                showPreview(image);
                 const resized = resizeMe(image);
                 const newinput = document.createElement('input');
                 newinput.type = 'hidden';
