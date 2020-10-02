@@ -791,6 +791,31 @@ window.onload = () => {
 
         return new Blob([ia], {type:mimeString});
     }
+    const showPreview = (img) => {
+        const preview = document.getElementById('preview');
+        let targetWidth = window.getComputedStyle(preview).width;
+        // Wytnij "px" z wartości szerokości (String)
+        targetWidth = Number(targetWidth.substr(0, targetWidth.length - 2));
+        
+        const scale = targetWidth / img.width;
+        img.width *= scale;
+        img.height *= scale;
+
+        if (img.height > imageOptions.maxHeight) {
+            const scale = imageOptions.maxHeight / img.height;
+            img.width *= scale;
+            img.height *= scale;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, img.width, img.height);
+        
+        preview.appendChild(canvas);
+    }
     const resizeMe = (img) => {
         const canvas = document.createElement('canvas');
         let width = img.width;
@@ -812,7 +837,6 @@ window.onload = () => {
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
-        document.getElementById('preview').appendChild(canvas);
         return canvas.toDataURL("image/jpeg", 0.7);
     }
     const processFile = (file, formId) => {
@@ -834,6 +858,7 @@ window.onload = () => {
             const image = new Image();
             image.src = blobURL;
             image.onload = () => {
+                showPreview(image);
                 const resized = resizeMe(image);
                 const newinput = document.createElement('input');
                 newinput.type = 'hidden';
