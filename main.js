@@ -794,34 +794,25 @@ window.onload = () => {
     const showPreview = (img) => {
         const preview = document.getElementById('preview');
         let targetWidth = window.getComputedStyle(preview).width;
-        // cut "px" from width string
-        targetWidth = targetWidth.substr(0, targetWidth.length - 2);
-        targetWidth = Number(targetWidth);
-        let width = img.width;
-        let height = img.height;
+        // Wytnij "px" z wartości szerokości (String)
+        targetWidth = Number(targetWidth.substr(0, targetWidth.length - 2));
         
-        const scale = targetWidth / width;
-        width *= scale;
-        height *= scale;
-        img.width = width;
-        img.height = height;
-        
-        console.log(targetWidth, img.width, img.height, scale);
+        const scale = targetWidth / img.width;
+        img.width *= scale;
+        img.height *= scale;
 
-        if (height > imageOptions.maxHeight) {
-            const scale = imageOptions.maxHeight / height;
-            width *= scale;
-            height *= scale;
-            img.width = width;
-            img.height = height;
+        if (img.height > imageOptions.maxHeight) {
+            const scale = imageOptions.maxHeight / img.height;
+            img.width *= scale;
+            img.height *= scale;
         }
 
         const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = img.width;
+        canvas.height = img.height;
         
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
+        ctx.drawImage(img, 0, 0, img.width, img.height);
         
         preview.appendChild(canvas);
     }
