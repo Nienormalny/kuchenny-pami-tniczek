@@ -21,7 +21,7 @@ https://www.dropbox.com/s/0aabu82xxg8vldo/small-food-app-tutorial.pdf?dl=0
 1. First up you need to fork (make a copy) of this repo to your Github account.
 2. Clone (download) your fork to your computer
 3. Set your streams so you can sync your clone with the original repo (get the latest updates)
-4. `git remote add upstream https://github.com/Nienormalny/twitch-enhancer.git`
+4. `git remote add upstream https://github.com/Nienormalny/kuchenny-pami-tniczek.git`
 5. `git pull upstream main`
 6. The above 2 commands will synchronize your forked version of the project with the actual repository.
 Create a branch
