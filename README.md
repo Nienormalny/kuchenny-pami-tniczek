@@ -18,6 +18,7 @@ I thing selflearning is one of the most important element to define our Coding s
 > Każdy głupiec może napisać kod zrozumiały dla komputera. Dobrzy programiści potrafią stworzyć kod zrozumiały dla ludzi.
 
 > Any fool can write code that a computer can understand. Good programmers write code that humans can understand.
+
       **Martin Fowler**
 
 ## Design do pobrania / Design to download
