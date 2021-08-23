@@ -1,20 +1,25 @@
 # Kuchenny pamiętniczek
 Mini webowa stronka do zapisywania przepisów kuchennych. **Z mojego poradnika streamowego**
+This is minie web app i made on live stream. It is about to save recipes.  User can register yourself, setting up hist profile and add new recipes.
+Every day all users will be able to see Recipe of the day (randomly genereted from added "public" recipes).
 
-## Cele:
-1. Użyć jednego pliku HTML 🦴
-2. Użyć jednego pliku Less 👁️
-3. Użyć jednego pliku JS 🍖
-4. Podpiąć Firebase 🔥
+## Cele / Cases:
+1. Użyć jednego pliku HTML 🦴 / Use one HTML file
+2. Użyć jednego pliku Less 👁️ / Use one LESS file
+3. Użyć jednego pliku JS 🍖 / Use one JS file
+4. Podpiąć Firebase 🔥 / Add firebase & firestore database
 
-## Poco?
+## Poco? / Why?
 Żeby dobrze się bawić i czerpać przyjemność z kodowania!
 Do tego nauczyć się czegoś nowego, ponieważ samorozwój to jeden z najważniejszych czynników definiujących nasze umiejętnośći "KODERSKIE" oraz nas samych. **Powiedział co wiedział...**
+/ Because of having fun and enjoying my time thrue the coding! It was a little challange for me to keep all things in just 3 files. So i learned a lot new techniques and tricks :)
+I thing selflearning is one of the most important element to define our Coding skills! **He said what he knew...**
 
 > Każdy głupiec może napisać kod zrozumiały dla komputera. Dobrzy programiści potrafią stworzyć kod zrozumiały dla ludzi.
+> Any fool can write code that a computer can understand. Good programmers write code that humans can understand.
       **Martin Fowler**
 
-## Design do pobrania
+## Design do pobrania / Design to download
 https://www.dropbox.com/s/0aabu82xxg8vldo/small-food-app-tutorial.pdf?dl=0
 
 ## How to contribute:
