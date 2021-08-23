@@ -19,7 +19,7 @@ I thing selflearning is one of the most important element to define our Coding s
 
 > Any fool can write code that a computer can understand. Good programmers write code that humans can understand.
 
-      **Martin Fowler**
+      Martin Fowler
 
 ## Design do pobrania / Design to download
 https://www.dropbox.com/s/0aabu82xxg8vldo/small-food-app-tutorial.pdf?dl=0
